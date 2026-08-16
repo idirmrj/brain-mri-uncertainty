@@ -1,5 +1,5 @@
 """
-run_experiments.py - launches a sweep of training configs, all logged to MLflow.
+launches a sweep of training configs, all logged to MLflow.
 
 Covers the comparisons you want to defend in interviews:
   - backbone:      resnet18 vs resnet34
@@ -88,7 +88,6 @@ def main():
     base = dict(batch_size=32, lr=1e-4, num_workers=args.num_workers,
                 freeze_encoder=False, seed=42)
 
-    # --- 1) config sweep -----------------------------------------------------
     sweep = [
         {**base, "backbone": "resnet18", "dropout": 0.3},
         {**base, "backbone": "resnet18", "dropout": 0.5},
@@ -111,8 +110,6 @@ def main():
                        f"results/model_{name}.pt")
             print(f"   val {best_val:.3f} | test {acc:.3f} | entropy ratio {ratio:.2f}x")
 
-    # --- 2) deep ensemble ----------------------------------------------------
-    # train N resnet18 with different seeds, average their softmax on test
     print(f"\n=== Deep ensemble ({args.ensemble_size} models) ===")
     import torch.nn.functional as F
     members, classes_ref, test_loader_ref = [], None, None

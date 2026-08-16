@@ -1,5 +1,5 @@
 """
-data.py - dataset, transforms and dataloaders for the brain MRI classifier.
+dataset, transforms and dataloaders for the brain MRI classifier.
 
 Decisions baked in (from 01_explore):
   - Images resized to 224x224 (ImageNet-pretrained encoder standard).
@@ -22,18 +22,11 @@ IMG_SIZE = 224
 
 
 def _loader_rgb(path):
-    """Force every image to RGB (handles the mixed L / RGB modes)."""
     from PIL import Image
     return Image.open(path).convert("RGB")
 
 
 def build_transforms():
-    """Train transforms include light augmentation; eval transforms don't.
-
-    Augmentation is deliberately gentle for MRI: horizontal flip is fine, but we
-    avoid vertical flips / heavy rotations that would create anatomically
-    implausible brains. Small rotations + affine mimic real acquisition variance.
-    """
     train_tf = transforms.Compose([
         transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.RandomHorizontalFlip(p=0.5),
@@ -52,16 +45,9 @@ def build_transforms():
 
 def build_dataloaders(data_dir, batch_size=32, val_split=0.15,
                       num_workers=2, seed=42):
-    """Return (train_loader, val_loader, test_loader, class_names).
-
-    - train/val come from data/Training (val carved out with a fixed seed)
-    - test comes from data/Testing (the official hold-out, eval transforms)
-    """
     data_dir = Path(data_dir)
     train_tf, eval_tf = build_transforms()
 
-    # Two views of the SAME Training folder: one with augmentation (train),
-    # one without (val). We then split indices so val never sees augmentation.
     train_full = datasets.ImageFolder(data_dir / "Training", transform=train_tf,
                                       loader=_loader_rgb)
     val_full = datasets.ImageFolder(data_dir / "Training", transform=eval_tf,
@@ -90,7 +76,6 @@ def build_dataloaders(data_dir, batch_size=32, val_split=0.15,
 
 
 if __name__ == "__main__":
-    # quick self-check: run `python src/mriunc/data.py <path-to-data>`
     import sys
     root = sys.argv[1] if len(sys.argv) > 1 else "data"
     tr, va, te, classes = build_dataloaders(root, batch_size=8, num_workers=0)

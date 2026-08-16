@@ -1,5 +1,5 @@
 """
-gradcam.py - Grad-CAM heatmaps: where did the model look to decide?
+Grad-CAM heatmaps: where did the model look to decide?
 
 Overlays a heatmap on the MRI showing which regions drove the prediction.
 Two uses:
@@ -28,7 +28,6 @@ from uncertainty import load_model, mc_dropout_predict
 
 
 def denormalize(tensor):
-    """Undo ImageNet normalization -> displayable [0,1] image (H, W, 3)."""
     mean = torch.tensor(IMAGENET_MEAN).view(3, 1, 1)
     std = torch.tensor(IMAGENET_STD).view(3, 1, 1)
     img = (tensor.cpu() * std + mean).clamp(0, 1)
@@ -62,12 +61,10 @@ def main():
         x, y = ds[i]
         xb = x.unsqueeze(0).to(device)
 
-        # prediction + uncertainty for the caption
         out = mc_dropout_predict(model, xb, n_passes=20)
         pred = out["pred"].item(); conf = out["confidence"].item(); ent = out["entropy"].item()
 
-        # Grad-CAM needs grads -> run outside no_grad, model in eval
-        grayscale_cam = cam(input_tensor=xb)[0]           # (H, W) in [0,1]
+        grayscale_cam = cam(input_tensor=xb)[0]
         rgb = denormalize(x)
         overlay = show_cam_on_image(rgb, grayscale_cam, use_rgb=True)
 

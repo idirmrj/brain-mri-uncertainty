@@ -1,5 +1,5 @@
 """
-uncertainty.py - MC Dropout uncertainty estimation.
+MC Dropout uncertainty estimation.
 
 Idea (recap): keep dropout ACTIVE at inference, run the same image N times.
 The N slightly-different softmax outputs are averaged; their spread is the
@@ -23,30 +23,24 @@ from model import MRIClassifier, enable_mc_dropout
 
 @torch.no_grad()
 def mc_dropout_predict(model, x, n_passes=30):
-    """Run x through the model n_passes times with dropout active.
 
-    x: tensor (B, 3, 224, 224) already on the right device.
-    Returns dict of tensors, each (B, ...):
-      mean_probs (B, C), pred (B,), confidence (B,), entropy (B,), variance (B,)
-    """
-    enable_mc_dropout(model)                       # dropout ON, batchnorm frozen
+    enable_mc_dropout(model)
     probs = torch.stack([F.softmax(model(x), dim=1)
-                         for _ in range(n_passes)], dim=0)   # (N, B, C)
+                         for _ in range(n_passes)], dim=0)
 
-    mean_probs = probs.mean(0)                     # (B, C)
-    var_probs = probs.var(0)                       # (B, C) disagreement per class
+    mean_probs = probs.mean(0) 
+    var_probs = probs.var(0)
 
-    pred = mean_probs.argmax(1)                    # (B,)
-    confidence = mean_probs.max(1).values          # (B,)
-    entropy = -(mean_probs * (mean_probs + 1e-12).log()).sum(1)  # (B,)
-    variance = var_probs.mean(1)                   # (B,) averaged over classes
+    pred = mean_probs.argmax(1)
+    confidence = mean_probs.max(1).values
+    entropy = -(mean_probs * (mean_probs + 1e-12).log()).sum(1)
+    variance = var_probs.mean(1)
 
     return {"mean_probs": mean_probs, "pred": pred, "confidence": confidence,
             "entropy": entropy, "variance": variance}
 
 
 def load_model(checkpoint_path, device=None):
-    """Rebuild the model from a training checkpoint and load its weights."""
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(checkpoint_path, map_location=device)
     a = ckpt.get("args", {})
@@ -62,8 +56,6 @@ def load_model(checkpoint_path, device=None):
 
 @torch.no_grad()
 def evaluate_with_uncertainty(model, loader, device, n_passes=30):
-    """Run MC Dropout over a whole loader. Returns flat tensors for analysis:
-       preds, labels, confidence, entropy, variance, correct."""
     preds, labels, conf, ent, var = [], [], [], [], []
     for x, y in loader:
         x = x.to(device)
@@ -80,7 +72,6 @@ def evaluate_with_uncertainty(model, loader, device, n_passes=30):
 
 
 if __name__ == "__main__":
-    # smoke test with random weights: check shapes + that MC gives non-zero spread
     model = MRIClassifier(num_classes=4, pretrained=False)
     x = torch.randn(5, 3, 224, 224)
     out = mc_dropout_predict(model, x, n_passes=20)

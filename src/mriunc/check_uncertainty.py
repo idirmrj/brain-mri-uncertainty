@@ -1,5 +1,5 @@
 """
-check_uncertainty.py - sanity check on the core hypothesis of the project:
+sanity check on the core hypothesis of the project:
 "the model is more uncertain when it is wrong."
 
 Loads the trained model, runs MC Dropout over the test set, and compares the
@@ -28,7 +28,6 @@ def main():
     model, classes, device = load_model(args.ckpt)
     print("Device:", device, "| classes:", classes)
 
-    # we evaluate on the untouched Testing set
     _, _, test_loader, _ = build_dataloaders(
         args.data, batch_size=32, num_workers=args.num_workers)
 

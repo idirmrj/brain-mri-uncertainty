@@ -1,5 +1,5 @@
 """
-calibration.py - is the model's confidence trustworthy?
+is the model's confidence trustworthy?
 
 A model can be 95% accurate but badly calibrated: it says "90% sure" and is
 right only 70% of the time. This measures and fixes that.
@@ -29,7 +29,6 @@ ACCENT = "#7B2CBF"
 
 @torch.no_grad()
 def collect_logits(model, loader, device):
-    """Standard (non-MC) forward pass: logits + labels for the whole loader."""
     model.eval()
     logits_all, labels_all = [], []
     for x, y in loader:
@@ -39,7 +38,6 @@ def collect_logits(model, loader, device):
 
 
 def compute_ece(probs, labels, n_bins=15):
-    """Expected Calibration Error + per-bin (confidence, accuracy, count)."""
     conf, pred = probs.max(1)
     correct = pred.eq(labels)
     bins = torch.linspace(0, 1, n_bins + 1)
@@ -57,7 +55,6 @@ def compute_ece(probs, labels, n_bins=15):
 
 
 def fit_temperature(logits, labels, max_iter=100):
-    """Find the single scalar T that minimizes NLL on a held-out set."""
     T = torch.nn.Parameter(torch.ones(1))
     opt = torch.optim.LBFGS([T], lr=0.01, max_iter=max_iter)
 
@@ -79,7 +76,6 @@ def main():
     args = ap.parse_args()
 
     model, classes, device = load_model(args.ckpt)
-    # fit temperature on VALIDATION, evaluate calibration on TEST (no leakage)
     _, val_loader, test_loader, _ = build_dataloaders(args.data, batch_size=32,
                                                       num_workers=args.num_workers)
 
@@ -96,7 +92,6 @@ def main():
     ece_a, xa, acca, confa = compute_ece(probs_after, test_labels)
     print(f"ECE before: {ece_b:.4f}   ECE after temperature scaling: {ece_a:.4f}")
 
-    # reliability diagram (before vs after)
     fig, ax = plt.subplots(1, 2, figsize=(11, 4.5))
     for a, (x, acc, conf, ece, title) in zip(ax, [
         (xb, accb, confb, ece_b, f"Before (ECE={ece_b:.3f})"),

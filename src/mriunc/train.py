@@ -29,7 +29,6 @@ def set_seed(seed=42):
 
 
 def run_epoch(model, loader, criterion, device, optimizer=None):
-    """One pass. If optimizer is given -> train mode, else eval."""
     train = optimizer is not None
     model.train() if train else model.eval()
     total, correct, loss_sum = 0, 0, 0.0
@@ -76,7 +75,7 @@ def main():
     model = MRIClassifier(num_classes=len(classes), backbone=args.backbone,
                           dropout=args.dropout, pretrained=True,
                           freeze_encoder=args.freeze_encoder).to(device)
-    criterion = nn.CrossEntropyLoss()   # dataset is balanced -> no weighting
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(
         (p for p in model.parameters() if p.requires_grad), lr=args.lr)
 
@@ -100,7 +99,6 @@ def main():
                   f"train loss {tr_loss:.3f} acc {tr_acc:.3f} | "
                   f"val loss {va_loss:.3f} acc {va_acc:.3f}")
 
-            # keep only the best-on-validation checkpoint
             if va_acc > best_val_acc:
                 best_val_acc = va_acc
                 torch.save({"state_dict": model.state_dict(),
